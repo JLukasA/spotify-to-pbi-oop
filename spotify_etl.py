@@ -242,6 +242,5 @@ class SpotifyETL:
 
 
 def run(db_loc: str, client_id: str, client_secret: str, redirect_uri: str) -> None:
-    """Legacy function to maintain backward compatibility."""
     etl = SpotifyETL(db_loc=db_loc, client_id=client_id, client_secret=client_secret, redirect_uri=redirect_uri)
     etl.run()
