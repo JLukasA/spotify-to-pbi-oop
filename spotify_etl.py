@@ -21,7 +21,7 @@ class SpotifyETL:
         self.engine = None
         self.token_cache_path = "./data/spotify_token_cache.json"
 
-    def get_engine(self):
+    def _get_engine(self):
         if not self.engine or self.engine.closed:
             self.engine = create_engine(self.db_loc)
         return self.engine
@@ -47,13 +47,13 @@ class SpotifyETL:
 
         return spotipy.Spotify(auth_manager=auth_manager)
 
-    def get_spotify_client(self) -> spotipy.Spotify:
+    def _get_spotify_client(self) -> spotipy.Spotify:
         if self.sp_client is None:
             self.sp_client = self._authenticate()
         return self.sp_client
 
-    def extract(self) -> dict[str, Any]:
-        sp = self.get_spotify_client()
+    def _extract(self) -> dict[str, Any]:
+        sp = self._get_spotify_client()
         today = datetime.datetime.now(datetime.timezone.utc)
         yesterday_unix = int((today - datetime.timedelta(days=1)).timestamp() * 1000)
         return sp.current_user_recently_played(limit=50, after=yesterday_unix)
@@ -92,8 +92,8 @@ class SpotifyETL:
             """)
             conn.execute(query3)
 
-    def transform(self, raw_data: dict[str, Any]) -> pd.DataFrame:
-        sp = self.get_spotify_client()
+    def _transform(self, raw_data: dict[str, Any]) -> pd.DataFrame:
+        sp = self._get_spotify_client()
 
         song_name_list, artist_name_list, featured_artist_list = [], [], []
         genre_list, album_name_list = [], []
@@ -165,7 +165,7 @@ class SpotifyETL:
 
         return True
 
-    def load(self, df: pd.DataFrame) -> None:
+    def _load(self, df: pd.DataFrame) -> None:
         """Load processed data into database."""
         if df.empty:
             print("DataFrame is empty, no data to upload.")
@@ -228,11 +228,11 @@ class SpotifyETL:
     def run(self) -> None:
         """Run the complete ETL pipeline."""
         try:
-            self.engine = self.get_engine()
+            self.engine = self._get_engine()
             self._initialize_database()
-            raw_data = self.extract()
-            processed_data = self.transform(raw_data)
-            self.load(processed_data)
+            raw_data = self._extract()
+            processed_data = self._transform(raw_data)
+            self._load(processed_data)
             # return processed_data
         except Exception as e:
             print(f"ETL pipeline failed: {e}")

@@ -21,15 +21,12 @@ class AcousticBrainzETL:
             'Accept': 'application/json'
         }
 
-    def get_engine(self):
+    def _get_engine(self):
         if not self.engine or self.engine.closed:
             self.engine = create_engine(self.db_loc)
         return self.engine
 
-    def _authenticate(self) -> None:
-        pass
-
-    def get_missing_isrc(self) -> list[str]:
+    def _get_missing_isrc(self) -> list[str]:
         """ Get ISRCs of songs where data is needed to be fetched. """
         with self.engine.begin() as conn:
             query = text(""" 
@@ -47,7 +44,7 @@ class AcousticBrainzETL:
             new_isrc = {row.isrc for row in res.fetchall()}
             return list(new_isrc)
 
-    def isrc_to_mbid(self, isrc_list: list[str]) -> tuple[list[Optional[str]], list[str], dict[str, str]]:
+    def _isrc_to_mbid(self, isrc_list: list[str]) -> tuple[list[Optional[str]], list[str], dict[str, str]]:
 
         mbid_list = []
         failed_conversion_list = []
@@ -80,7 +77,7 @@ class AcousticBrainzETL:
         print(f"Process finished. For {len(isrc_list)} ISRCs, MBIDs were found for {len(mbid_list)}, and the extraction failed for {len(failed_conversion_list)}.")
         return mbid_list, failed_conversion_list, mbid_to_isrc
 
-    def extract(self, mbid_list: list[str]) -> tuple[dict[str, dict], list[str]]:
+    def _extract(self, mbid_list: list[str]) -> tuple[dict[str, dict], list[str]]:
         ab_data = {}
         invalid_mbids = []
         print("Acousticbrainz data extraction initiated.")
@@ -111,7 +108,7 @@ class AcousticBrainzETL:
         print(f"Acousticbrainz data extraction finished. Out of {len(mbid_list)} MBIDs, data was found for {len(ab_data)}. {len(invalid_mbids)} invalid MBIDs.")
         return ab_data, invalid_mbids
 
-    def transform(self, raw_data: dict[str, Any], mbids: list[Optional[str]], failed_mbids: list[str], mbid_isrc_mapping: dict[str, str]) -> pd.DataFrame:
+    def _transform(self, raw_data: dict[str, Any], mbids: list[Optional[str]], failed_mbids: list[str], mbid_isrc_mapping: dict[str, str]) -> pd.DataFrame:
         output_data = []
 
         for mbid in mbids:
@@ -172,7 +169,7 @@ class AcousticBrainzETL:
             """)
             conn.execute(query3)
 
-    def load(self, df: pd.DataFrame, failed_mbids: list[str], failed_isrcs: list[str], mbid_isrc_mapping: dict[str, str]) -> None:
+    def _load(self, df: pd.DataFrame, failed_mbids: list[str], failed_isrcs: list[str], mbid_isrc_mapping: dict[str, str]) -> None:
         """Load processed data into database."""
 
         try:
@@ -223,16 +220,16 @@ class AcousticBrainzETL:
     def run(self) -> None:
         """Run the complete ETL pipeline."""
         try:
-            self.engine = self.get_engine()
+            self.engine = self._get_engine()
             self._initialize_database()
-            isrc = self.get_missing_isrc()
+            isrc = self._get_missing_isrc()
             if not isrc:
                 print("No new records to add.")
                 return
-            mbids, failed_isrcs, mbid_isrc_mapping = self.isrc_to_mbid(isrc)
-            raw_data, failed_mbids = self.extract(mbids)
-            processed_data = self.transform(raw_data, mbids, failed_mbids, mbid_isrc_mapping)
-            self.load(processed_data, failed_mbids, failed_isrcs, mbid_isrc_mapping)
+            mbids, failed_isrcs, mbid_isrc_mapping = self._isrc_to_mbid(isrc)
+            raw_data, failed_mbids = self._extract(mbids)
+            processed_data = self._transform(raw_data, mbids, failed_mbids, mbid_isrc_mapping)
+            self._load(processed_data, failed_mbids, failed_isrcs, mbid_isrc_mapping)
         except Exception as e:
             print(f"ETL pipeline failed: {e}")
             return
