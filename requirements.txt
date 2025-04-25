@@ -3,3 +3,4 @@ pandas
 spotipy
 tqdm
 openpyxl
+psycopg2-binary

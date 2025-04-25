@@ -23,32 +23,32 @@ class DatabaseToExcelExtraction:
     def _create_hourly_sheet(self):
         with self._engine.begin() as conn:
             query1 = text("""
-                SELECT
-                    CAST(strftime('%H', datetime(p.played_at)) AS INTEGER) AS hour_of_day,
-                    ROUND(AVG(CASE
-                                WHEN ab.danceability = 'danceable' THEN 1
-                                WHEN ab.danceability = 'not_danceable' THEN 0
-                                ELSE 0.5
-                            END), 2) AS danceability_score,
-                    ROUND(AVG(CASE
-                                WHEN ab.timbre = 'bright' THEN 1
-                                WHEN ab.timbre = 'dark' then 0
-                                ELSE 0.5
-                            END), 2) AS brightness_score,
-                    ROUND(AVG(CASE
-                                WHEN ab.gender = 'male' THEN ab.gender_prob
-                                WHEN ab.gender = 'female' then -ab.gender_prob
-                                ELSE 0
-                            END), 2) AS male_score,
-                    COUNT(*) as entries
-                FROM plays p
-                JOIN song_data s ON p.track_id = s.track_id
-                JOIN acousticbrainz_data ab ON s.isrc = ab.isrc
-                WHERE ab.danceability IS NOT NULL
-                AND ab.timbre IS NOT NULL
-                GROUP BY hour_of_day
-                ORDER BY hour_of_day
-                """)
+            SELECT
+                EXTRACT(HOUR FROM p.played_at::timestamp) AS hour_of_day,
+                ROUND(AVG(CASE
+                            WHEN ab.danceability = 'danceable' THEN 1
+                            WHEN ab.danceability = 'not_danceable' THEN 0
+                            ELSE 0.5
+                                END)::numeric, 2) AS danceability_score,
+                ROUND(AVG(CASE
+                            WHEN ab.timbre = 'bright' THEN 1
+                            WHEN ab.timbre = 'dark' then 0
+                            ELSE 0.5
+                        END)::numeric, 2) AS brightness_score,
+                ROUND(AVG(CASE
+                            WHEN ab.gender = 'male' THEN ab.gender_prob
+                            WHEN ab.gender = 'female' then -ab.gender_prob
+                            ELSE 0
+                        END)::numeric, 2) AS male_score,
+                COUNT(*) as entries
+            FROM plays p
+            JOIN song_data s ON p.track_id = s.track_id
+            JOIN acousticbrainz_data ab ON s.isrc = ab.isrc
+            WHERE ab.danceability IS NOT NULL
+            AND ab.timbre IS NOT NULL
+            GROUP BY hour_of_day
+            ORDER BY hour_of_day
+            """)
             df_hourly = pd.read_sql(query1, conn)
 
             query2 = text("""
