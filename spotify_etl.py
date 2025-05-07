@@ -19,7 +19,7 @@ class SpotifyETL:
         self.redirect_uri = redirect_uri
         self.sp_client = None
         self.engine = None
-        self.token_cache_path = "./data/spotify_token_cache.json"
+        self.token_cache_path = "./config/spotify_token_cache.json"
 
     def _get_engine(self):
         if not self.engine or self.engine.closed:
@@ -91,6 +91,15 @@ class SpotifyETL:
                 ) 
             """)
             conn.execute(query3)
+            query4 = text(""" 
+                CREATE TABLE IF NOT EXISTS genres (
+                    artist_id TEXT,
+                    genre TEXT,
+                    PRIMARY KEY (artist_id, genre),
+                    FOREIGN KEY (artist_id) REFERENCES artist_data (artist_id)
+                ) 
+            """)
+            conn.execute(query4)
 
     def _transform(self, raw_data: dict[str, Any]) -> pd.DataFrame:
         sp = self._get_spotify_client()
@@ -131,10 +140,11 @@ class SpotifyETL:
             print(f"Error fetching artist information: {e}")
             artist_info_dict = {}
 
+        genres_dict = {}
         for id in artist_id_list:
             artist_info = artist_info_dict.get(id)
-            genre = ", ".join(artist_info.get("genres", [])) if artist_info else ""
-            genre_list.append(genre)
+            genres = artist_info.get("genres", [])
+            genres_dict[id] = genres
 
         df = pd.DataFrame({
             "played_at": played_at_list,
@@ -142,7 +152,6 @@ class SpotifyETL:
             "artist_name": artist_name_list,
             "featured_artists": featured_artist_list,
             "album_name": album_name_list,
-            "artist_genre": genre_list,
             "release_date": release_date_list,
             "duration_sec": duration_list,
             "track_id": track_id_list,
@@ -150,7 +159,9 @@ class SpotifyETL:
             "spotify_url": spotify_url_list,
             "isrc": isrc_list
         })
-        return df
+        genres_df = pd.DataFrame([(artist_id, genre) for artist_id, genres in genres_dict.items() for genre in genres],
+                                 columns=['artist_id', 'genre'])
+        return df, genres_df
 
     def _validate_data(self, df: pd.DataFrame) -> bool:
         """ Quick data validation before uploading to database. """
@@ -165,7 +176,7 @@ class SpotifyETL:
 
         return True
 
-    def _load(self, df: pd.DataFrame) -> None:
+    def _load(self, df: pd.DataFrame, genres_df: pd.DataFrame) -> None:
         """Load processed data into database."""
         if df.empty:
             print("DataFrame is empty, no data to upload.")
@@ -187,6 +198,10 @@ class SpotifyETL:
                 query_artists = text(""" 
                     SELECT artist_id 
                     FROM artist_data
+                """)
+                query_genres = text(""" 
+                    SELECT artist_id, genre 
+                    FROM genres
                 """)
                 # Filter on timestamp, in ISO8601 so converting to datetime for comparison
                 latest_uploaded_timestamp = conn.execute(query_plays).scalar()
@@ -218,9 +233,17 @@ class SpotifyETL:
                 uploaded_artist_ids = {row.artist_id for row in res}
                 new_df = new_df[~new_df['artist_id'].isin(uploaded_artist_ids)]
                 new_df = new_df.drop_duplicates(subset='artist_id', keep='first')
-                new_df[['artist_id', 'artist_name', 'artist_genre']].to_sql('artist_data', self.engine, index=False, if_exists='append')
+                new_df[['artist_id', 'artist_name']].to_sql('artist_data', self.engine, index=False, if_exists='append')
                 number_of_new_artists = len(new_df)
-                print(f"Data loaded successfully for {number_of_plays} plays. Played {number_of_new_songs} new songs and listened to {number_of_new_artists} new artists.")
+
+                # Filter genres
+                existing_genres = pd.read_sql(query_genres, conn)
+                filtered_genres_df = genres_df[~genres_df.apply(tuple, 1).isin(existing_genres.apply(tuple, 1))]
+                filtered_genres_df.to_sql('genres', self.engine, index=False, if_exists='append')
+                number_of_genres = len(filtered_genres_df)
+
+                print(
+                    f"Data loaded successfully for {number_of_plays} plays. Played {number_of_new_songs} new songs and listened to {number_of_new_artists} new artists. Added {number_of_genres} new genres.")
 
         except Exception as e:
             print(f"Failed to upload to database. Error: {e}")
@@ -231,8 +254,8 @@ class SpotifyETL:
             self.engine = self._get_engine()
             self._initialize_database()
             raw_data = self._extract()
-            processed_data = self._transform(raw_data)
-            self._load(processed_data)
+            processed_data, genres_dict = self._transform(raw_data)
+            self._load(processed_data, genres_dict)
             # return processed_data
         except Exception as e:
             print(f"ETL pipeline failed: {e}")

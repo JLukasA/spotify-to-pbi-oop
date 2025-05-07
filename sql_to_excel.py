@@ -61,7 +61,7 @@ class DatabaseToExcelExtraction:
             df_genres = pd.read_sql(query2, conn)
             df_genres['artist_genre'] = df_genres['artist_genre'].str.split(',\\s*')
             exploded_df = df_genres.explode('artist_genre')
-            exploded_df['hour'] = pd.to_datetime(exploded_df['played_at']).dt.hour
+            exploded_df['hour'] = pd.to_datetime(exploded_df['played_at'], format='ISO8601').dt.hour
             genre_counts = exploded_df.groupby(['hour', 'artist_genre']).size().reset_index(name='count')
             most_common_genres = genre_counts.loc[genre_counts.groupby('hour')['count'].idxmax()]
             most_common_genres = most_common_genres.rename(columns={'artist_genre': 'most_common_genre'})
@@ -77,6 +77,26 @@ class DatabaseToExcelExtraction:
             table_name = "data_by_hour"
             output_path = self._generate_output_path(table_name)
             df_final.to_excel(output_path, index=False)
+
+    def _create_daily_sheet(self):
+        with self._engine.begin() as conn:
+            query = query = text("""
+                SELECT
+                    EXTRACT(DOW FROM p.played_at::timestamp) AS weekday,
+                    -- ...
+                    COUNT(*) as entries
+                FROM plays p
+                JOIN song_data s ON p.track_id = s.track_id
+                JOIN acousticbrainz_data ab ON s.isrc = ab.isrc
+                WHERE ab.danceability IS NOT NULL
+                AND ab.timbre IS NOT NULL
+                GROUP BY weekday
+                ORDER BY weekday
+            """)
+            df = pd.read_sql
+            table_name = "data_by_day"
+            output_path = self._generate_output_path(table_name)
+            df.to_excel(output_path, index=False)
 
     def _create_large_sheet(self):
         with self._engine.begin() as conn:

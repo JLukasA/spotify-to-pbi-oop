@@ -1,6 +1,7 @@
 import spotify_etl
 import ab_etl
 import sql_to_excel
+import visualizer
 import json
 
 
@@ -67,3 +68,14 @@ if __name__ == "__main__":
 
     if ans2 in ["YES", "Y"]:
         sql_to_excel.run(db_loc=db_loc)
+
+#    while True:
+#        ans3 = input("Do you want to create some simple dashboards and visualizations of the data? Answer with Yes/y or No/n: ").upper()
+#
+#        if ans3 in ["YES", "Y", "NO", "N"]:
+#            break
+#        else:
+#            print("Invalid input. Answer with yes/y or no/n.")
+#
+#    if ans3 in ["YES", "Y"]:
+#        visualizer.run(db_loc=db_loc)
