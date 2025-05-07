@@ -19,7 +19,7 @@ class SpotifyETL:
         self.redirect_uri = redirect_uri
         self.sp_client = None
         self.engine = None
-        self.token_cache_path = "./config/spotify_token_cache.json"
+        self.token_cache_path = "spotify_token_cache.json"
 
     def _get_engine(self):
         if not self.engine or self.engine.closed:
