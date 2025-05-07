@@ -1,0 +1,23 @@
+# application ignores
+mb_config.txt
+spotify_config.txt
+spotify_token_cache.json
+my_tracks.sqlite
+musicbrainz_config.txt
+data/
+pg_config.json
+visualizer.py
+
+# general python ignores
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.egg-info/
+dist/
+build/
+*.log
+*.tmp
+*.pid
+*.seed
+*.env
