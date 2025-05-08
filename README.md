@@ -17,6 +17,9 @@ To use this project, follow these steps:
 - Create an AcousticBrainz API Alias (User-Agent) and add app name and email to the musicbrainz_config.txt file.
 - Beware of the formatting of the credentials - in the section below you can see how the config files should look.
 - Run the main.py script to start the ETL pipeline. Follow the prompts to update the database with new data and create Excel tables and visualizations.
+- Connect Power BI Desktop to the PostgreSQL database to access the data and create dashboards and visualizations.
+
+
 
 ### Configuration files
 
@@ -64,3 +67,11 @@ The script that creates Excel tables from the data in the database. Uses the pan
 ### localserver.py
 
 A simple local server script that handles API redirects. Used by the Spotify API to authenticate the user and redirect them back to the application.
+
+## 📊 Dashboard Overview
+
+
+<img src="docs/pb1.png" width="600">
+<img src="docs/pb2.png" width="600">
+
+📄 [View full PDF version](docs/summary_dashboard.pdf)
