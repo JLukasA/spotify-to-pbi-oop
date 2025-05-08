@@ -71,7 +71,7 @@ A simple local server script that handles API redirects. Used by the Spotify API
 ## 📊 Dashboard Overview
 
 
-<img src="docs/pb1.png" width="600">
-<img src="docs/pb2.png" width="600">
+<img src="docs/pb1.PNG" width="600">
+<img src="docs/pb2.PNG" width="600">
 
-📄 [View full PDF version](docs/summary_dashboard.pdf)
+📄 [View full PDF version](docs/Music_Dashboard.pdf)
