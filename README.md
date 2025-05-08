@@ -1,11 +1,18 @@
 # Project Summary
 
-This project is a ETL pipeline that collects music data from various sources, including Spotify and AcousticBrainz. The pipeline is designed to extract data from these sources, transform it into a usable format, and load it into a PostgreSQL database. The project also includes tools for creating Excel tables and visualizations from the data in the database.
+This project is a ETL pipeline that collects music data from various sources, including Spotify and AcousticBrainz. The pipeline is designed to extract data from these sources, transform it into a usable format, and load it into a PostgreSQL database. The project also includes tools for creating Excel tables.
 
 The pipeline is controlled by the main.py script, which prompts the user to update the database with new data and create Excel tables and visualizations. The script uses configuration files to connect to the database and authenticate with the music APIs.
 
 The project uses several libraries, including spotipy for interacting with the Spotify API, sqlalchemy for database operations, and pandas for data manipulation. The project also includes a localserver.py script for running a local server to handle API redirects.
 
+## 📊 Dashboard Overview
+
+
+<img src="docs/pb1.PNG" width="600">
+<img src="docs/pb2.PNG" width="600">
+
+📄 [View full PDF version](docs/Music_Dashboard.pdf)
 
 ## Using the Project
 
@@ -68,10 +75,3 @@ The script that creates Excel tables from the data in the database. Uses the pan
 
 A simple local server script that handles API redirects. Used by the Spotify API to authenticate the user and redirect them back to the application.
 
-## 📊 Dashboard Overview
-
-
-<img src="docs/pb1.PNG" width="600">
-<img src="docs/pb2.PNG" width="600">
-
-📄 [View full PDF version](docs/Music_Dashboard.pdf)
